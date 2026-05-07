@@ -253,6 +253,120 @@
         "url": "https://wechat2rss.xlab.app/feed/7131b577c61365cb47e81000738c10d872685908.xml",
         "enabled": true,
         "category": ""
+      },
+      {
+        "name": "0xjeff",
+        "url": "https://defi0xjeff.substack.com/feed",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Almanack of Naval",
+        "url": "https://www.navalmanack.com/blog-posts?format=rss",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Antirez",
+        "url": "https://antirez.com/rss",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Astral Codex Ten",
+        "url": "https://www.astralcodexten.com/feed",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Dynomight",
+        "url": "https://dynomight.net/feed.xml",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Ed Zitron's Where's Your Ed At",
+        "url": "https://www.wheresyoured.at/rss/",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Eugene Yan",
+        "url": "https://eugeneyan.com/rss/",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Farnam STREET",
+        "url": "https://www.farnamstreetblog.com/feed/",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Gwern.net Newsletter",
+        "url": "https://gwern.substack.com/feed",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "High Scalability",
+        "url": "https://highscalability.com/rss/",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Karpathy",
+        "url": "https://karpathy.bearblog.dev/feed/",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Lenny's Newsletter",
+        "url": "https://www.lennysnewsletter.com/feed",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Lil'Log",
+        "url": "https://lilianweng.github.io/index.xml",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Martin Fowler",
+        "url": "https://martinfowler.com/feed.atom",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Max Woolf's Blog",
+        "url": "https://minimaxir.com/index.xml",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Paul Graham: Essays",
+        "url": "http://www.aaronsw.com/2002/feeds/pgessays.rss",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Sahil Bloom — The Curiosity Chronicle",
+        "url": "https://www.sahilbloom.com/newsletter/rss.xml",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Simon Willison's Weblog",
+        "url": "https://simonwillison.net/atom/everything/",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "The Pragmatic Engineer",
+        "url": "https://newsletter.pragmaticengineer.com/feed",
+        "enabled": true,
+        "category": ""
       }
     ],
     "reddit": {
@@ -300,7 +414,7 @@
     },
     "twitter":
     {
-      "enabled": false,
+      "enabled": true,
       "users": ["karpathy", "ylecun"],
       "fetch_limit": 10,
       "fetch_reply_text": false,
@@ -312,7 +426,7 @@
     }
   },
   "filtering": {
-    "ai_score_threshold": 1.0,
+    "ai_score_threshold": 7.0,
     "time_window_hours": 24
   },
   "email": {
