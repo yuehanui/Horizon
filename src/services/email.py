@@ -4,6 +4,7 @@ import email
 import imaplib
 import logging
 import os
+import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -49,14 +50,20 @@ class EmailManager:
         if not self.config.enabled:
             return
 
+        mail = None
+        mailbox_selected = False
         try:
             mail = imaplib.IMAP4_SSL(self.config.imap_server, self.config.imap_port)
             mail.login(self.config.email_address, self.pwd)
-            mail.select("INBOX")
+            self._identify_imap_client(mail)
+            self._select_inbox(mail)
+            mailbox_selected = True
 
             keyword = self.config.subscribe_keyword
-            search_crit = f'(UNSEEN SUBJECT "{keyword}")'
+            # search_crit = f'(SUBJECT "{keyword}")'
+            search_crit = f'(UNSEEN)'
 
+            # status, messages = mail.search(None, search_crit)
             status, messages = mail.search(None, search_crit)
 
             if status == "OK" and messages[0]:
@@ -132,11 +139,19 @@ class EmailManager:
                                     else:
                                         logger.info(f"Not subscribed: {email_addr}")
 
-            mail.close()
-            mail.logout()
-
         except Exception as e:
             logger.error(f"Error checking subscriptions: {e}")
+        finally:
+            if mail:
+                if mailbox_selected:
+                    try:
+                        mail.close()
+                    except imaplib.IMAP4.error as e:
+                        logger.debug(f"IMAP close failed: {e}")
+                try:
+                    mail.logout()
+                except imaplib.IMAP4.error as e:
+                    logger.debug(f"IMAP logout failed: {e}")
 
     def send_daily_summary(
         self, summary_md: str, subject: str, subscribers: List[str]
@@ -218,3 +233,83 @@ class EmailManager:
                 server.send_message(msg)
         except Exception as e:
             logger.error(f"Failed to send reply to {to_email}: {e}")
+
+    def _identify_imap_client(self, mail: imaplib.IMAP4_SSL):
+        """Send IMAP ID for providers such as NetEase that reject unknown clients."""
+        previous_id_states = imaplib.Commands.get("ID")
+        imaplib.Commands["ID"] = ("AUTH", "SELECTED")
+
+        args = (
+            "name",
+            "Horizon",
+            "contact",
+            self.config.email_address,
+            "version",
+            "1.0.0",
+            "vendor",
+            "Horizon",
+        )
+
+        try:
+            status, data = mail._simple_command("ID", '("' + '" "'.join(args) + '")')
+            if status != "OK":
+                logger.info(f"IMAP ID command returned {status}: {data}")
+        except imaplib.IMAP4.error as e:
+            logger.error(f"IMAP ID command is not supported by this server: {e}")
+        finally:
+            if previous_id_states is None:
+                imaplib.Commands.pop("ID", None)
+            else:
+                imaplib.Commands["ID"] = previous_id_states
+
+    def _select_inbox(self, mail: imaplib.IMAP4_SSL):
+        """Select INBOX with fallbacks for IMAP servers with strict parsing."""
+        errors = []
+
+        for mailbox in ("INBOX", "Inbox", '"INBOX"', '"Inbox"'):
+            if self._try_select_mailbox(mail, mailbox, errors):
+                return
+
+        status, mailboxes = mail.list()
+        if status == "OK":
+            for mailbox_data in mailboxes:
+                mailbox = self._parse_mailbox_name(mailbox_data)
+                if mailbox and mailbox.lower() == "inbox":
+                    if self._try_select_mailbox(mail, mailbox, errors):
+                        return
+                    if self._try_select_mailbox(mail, f'"{mailbox}"', errors):
+                        return
+        else:
+            errors.append(f"LIST returned {status}: {mailboxes}")
+
+        raise imaplib.IMAP4.error(
+            "Unable to select INBOX. Tried: " + "; ".join(errors)
+        )
+
+    def _try_select_mailbox(
+        self, mail: imaplib.IMAP4_SSL, mailbox: str, errors: list[str]
+    ):
+        try:
+            status, data = mail.select(mailbox)
+        except imaplib.IMAP4.error as e:
+            errors.append(f"{mailbox}: {e}")
+            return False
+
+        if status == "OK":
+            return True
+
+        errors.append(f"{mailbox}: {status} {data}")
+        return False
+
+    def _parse_mailbox_name(self, mailbox_data):
+        if isinstance(mailbox_data, bytes):
+            text = mailbox_data.decode("utf-8", errors="replace")
+        else:
+            text = str(mailbox_data)
+
+        match = re.search(r' (?:"((?:[^"\\]|\\.)*)"|([^ ]+))$', text)
+        if not match:
+            return None
+
+        mailbox = match.group(1) if match.group(1) is not None else match.group(2)
+        return mailbox.replace(r"\"", '"').replace(r"\\", "\\")
