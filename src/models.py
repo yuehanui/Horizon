@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, model_validator
 
 
 class SourceType(str, Enum):
@@ -193,8 +193,28 @@ class Config(BaseModel):
     """Main configuration model."""
 
     version: str = "1.0"
-    ai: AIConfig
+    ai: Optional[AIConfig] = None
+    ai_providers: List[AIConfig] = Field(default_factory=list)
     sources: SourcesConfig
     filtering: FilteringConfig
     email: Optional[EmailConfig] = None
     webhook: Optional[WebhookConfig] = None
+
+    @model_validator(mode="after")
+    def _require_ai_configuration(self) -> "Config":
+        if not self.ai_providers and self.ai is None:
+            raise ValueError("Either ai_providers or ai must be configured")
+        return self
+
+    @property
+    def active_ai_configs(self) -> List[AIConfig]:
+        """Return AI provider configs in precedence order."""
+        return self.ai_providers or ([self.ai] if self.ai is not None else [])
+
+    @property
+    def primary_ai(self) -> AIConfig:
+        """Return the first active AI config for global defaults like languages."""
+        configs = self.active_ai_configs
+        if not configs:
+            raise ValueError("Either ai_providers or ai must be configured")
+        return configs[0]

@@ -178,7 +178,7 @@ def main() -> None:
             console.print("Set [cyan]webhook.enabled = true[/cyan] in data/config.json to enable it.")
             sys.exit(1)
 
-        lang = args.lang or (config.ai.languages[0] if config.ai.languages else "en")
+        lang = args.lang or (config.primary_ai.languages[0] if config.primary_ai.languages else "en")
         asyncio.run(_run_test(config.webhook, lang, args.dry_run, args.delivery))
 
     except KeyboardInterrupt:

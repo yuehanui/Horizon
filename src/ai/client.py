@@ -1,15 +1,16 @@
 """AI client abstraction supporting multiple providers."""
 
+import asyncio
 import os
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Sequence
 
 from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI, AsyncAzureOpenAI
 from google import genai
 from google.genai import types
 
-from ..models import AIConfig, AIProvider
+from ..models import AIConfig, AIProvider, Config
 from .tokens import record_usage
 
 
@@ -36,6 +37,59 @@ class AIClient(ABC):
             str: Generated completion text
         """
         pass
+
+
+class AIClients(AIClient):
+    """Round-robin pool of AI clients with rate-limit failover."""
+
+    def __init__(self, clients: Sequence[AIClient]):
+        if not clients:
+            raise ValueError("AIClients requires at least one AIClient")
+        self.clients = list(clients)
+        self.config = self.clients[0].config
+        self._next_index = 0
+        self._lock = asyncio.Lock()
+
+    async def complete(
+        self,
+        system: str,
+        user: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> str:
+        start_index = await self._reserve_client_index()
+        last_rate_limit_error: Optional[Exception] = None
+
+        for offset in range(len(self.clients)):
+            client_index = (start_index + offset) % len(self.clients)
+            client = self.clients[client_index]
+            try:
+                response = await client.complete(
+                    system=system,
+                    user=user,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                await self._mark_client_success(client_index)
+                return response
+            except Exception as exc:
+                if not _is_rate_limit_error(exc):
+                    raise
+                last_rate_limit_error = exc
+
+        if last_rate_limit_error is not None:
+            raise last_rate_limit_error
+        raise RuntimeError("No AI clients available")
+
+    async def _reserve_client_index(self) -> int:
+        async with self._lock:
+            index = self._next_index
+            self._next_index = (self._next_index + 1) % len(self.clients)
+            return index
+
+    async def _mark_client_success(self, index: int) -> None:
+        async with self._lock:
+            self._next_index = (index + 1) % len(self.clients)
 
 
 class AnthropicClient(AIClient):
@@ -485,6 +539,35 @@ class GeminiClient(AIClient):
             completion = max(0, total - prompt)
             record_usage("gemini", input_tokens=prompt, output_tokens=completion)
         return response.text
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    """Return True when an SDK exception represents HTTP 429/rate limiting."""
+    status_code = getattr(exc, "status_code", None)
+    if status_code == 429:
+        return True
+
+    response = getattr(exc, "response", None)
+    if getattr(response, "status_code", None) == 429:
+        return True
+
+    code = str(getattr(exc, "code", "")).lower()
+    message = str(exc).lower()
+    return (
+        ("rate" in message and ("limit" in message or "limited" in message))
+        or "429" in message
+        or "too many requests" in message
+        or code in {"rate_limit", "rate_limited", "rate_limit_exceeded"}
+    )
+
+
+def create_ai_clients(config: Config) -> AIClients:
+    """Create a round-robin AI client pool from app configuration.
+
+    `ai_providers` takes precedence over the legacy single-provider `ai`
+    field. When only `ai` is configured, the returned pool contains one client.
+    """
+    return AIClients([create_ai_client(ai_config) for ai_config in config.active_ai_configs])
 
 
 def create_ai_client(config: AIConfig) -> AIClient:

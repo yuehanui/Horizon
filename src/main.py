@@ -8,8 +8,15 @@ from pathlib import Path
 from dotenv import load_dotenv
 from rich.console import Console
 
-from .storage.manager import StorageManager
-from .orchestrator import HorizonOrchestrator
+if __package__ in (None, ""):
+    project_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(project_root))
+
+    from src.storage.manager import StorageManager
+    from src.orchestrator import HorizonOrchestrator
+else:
+    from .storage.manager import StorageManager
+    from .orchestrator import HorizonOrchestrator
 
 
 console = Console()
@@ -90,6 +97,15 @@ def print_config_template():
     "temperature": 0.3,
     "max_tokens": 4096
   },
+  "ai_providers": [
+    {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5-20250929",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "temperature": 0.3,
+      "max_tokens": 4096
+    }
+  ],
   "sources": {
     "github": [
       {

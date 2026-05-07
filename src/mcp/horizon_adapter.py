@@ -30,6 +30,7 @@ class HorizonRuntime:
     StorageManager: Any
     HorizonOrchestrator: Any
     create_ai_client: Any
+    create_ai_clients: Any
     ContentAnalyzer: Any
     ContentEnricher: Any
     DailySummarizer: Any
@@ -136,6 +137,7 @@ def load_runtime(horizon_path: Path) -> HorizonRuntime:
         StorageManager=storage.StorageManager,
         HorizonOrchestrator=orchestrator.HorizonOrchestrator,
         create_ai_client=ai_client.create_ai_client,
+        create_ai_clients=ai_client.create_ai_clients,
         ContentAnalyzer=analyzer.ContentAnalyzer,
         ContentEnricher=enricher.ContentEnricher,
         DailySummarizer=summarizer.DailySummarizer,

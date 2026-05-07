@@ -11,6 +11,28 @@ Horizon is configured through two files: a `.env` file for API keys and a `data/
 
 Configure which AI model scores and summarizes your content.
 
+To spread requests across multiple API keys or providers, use `ai_providers`.
+When `ai_providers` is present, it takes precedence over the legacy single-provider `ai` field:
+
+```json
+{
+  "ai_providers": [
+    {
+      "provider": "openai",
+      "model": "gpt-4",
+      "api_key_env": "OPENAI_API_KEY"
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5-20250929",
+      "api_key_env": "ANTHROPIC_API_KEY"
+    }
+  ]
+}
+```
+
+Horizon uses these clients round-robin and automatically tries the next client if one returns HTTP 429 rate limiting. The first configured provider supplies global defaults such as `languages`.
+
 **Anthropic Claude**:
 
 ```json

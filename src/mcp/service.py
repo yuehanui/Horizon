@@ -175,7 +175,7 @@ class HorizonPipelineService:
         missing_env: list[str] = []
 
         if check_env:
-            required = [ctx.config.ai.api_key_env]
+            required = [ai_config.api_key_env for ai_config in ctx.config.active_ai_configs]
             for key in required:
                 if not os.getenv(key):
                     missing_env.append(key)
@@ -196,10 +196,11 @@ class HorizonPipelineService:
             "horizon_path": str(ctx.horizon_path),
             "config_path": str(ctx.config_path),
             "ai": {
-                "provider": ctx.config.ai.provider.value,
-                "model": ctx.config.ai.model,
-                "languages": list(ctx.config.ai.languages),
-                "api_key_env": ctx.config.ai.api_key_env,
+                "provider": ctx.config.primary_ai.provider.value,
+                "model": ctx.config.primary_ai.model,
+                "languages": list(ctx.config.primary_ai.languages),
+                "api_key_env": ctx.config.primary_ai.api_key_env,
+                "provider_count": len(ctx.config.active_ai_configs),
             },
             "filtering": {
                 "ai_score_threshold": ctx.config.filtering.ai_score_threshold,
@@ -279,7 +280,7 @@ class HorizonPipelineService:
         if not items:
             raise HorizonMcpError(code="HZ_EMPTY_INPUT", message="No items available for scoring.")
 
-        ai_client = ctx.runtime.create_ai_client(ctx.config.ai)
+        ai_client = ctx.runtime.create_ai_clients(ctx.config)
         analyzer = ctx.runtime.ContentAnalyzer(ai_client)
         scored_items = await analyzer.analyze_batch(items)
 
@@ -370,7 +371,7 @@ class HorizonPipelineService:
         if not items:
             raise HorizonMcpError(code="HZ_EMPTY_INPUT", message="No items available for enrichment.")
 
-        ai_client = ctx.runtime.create_ai_client(ctx.config.ai)
+        ai_client = ctx.runtime.create_ai_clients(ctx.config)
         enricher = ctx.runtime.ContentEnricher(ai_client)
         await enricher.enrich_batch(items)
 
@@ -502,7 +503,7 @@ class HorizonPipelineService:
             config_path=config_path,
             sources=sources,
         )
-        final_languages = languages if languages else list(ctx.config.ai.languages)
+        final_languages = languages if languages else list(ctx.config.primary_ai.languages)
 
         summaries = []
         for lang in final_languages:
