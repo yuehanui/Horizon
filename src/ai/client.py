@@ -14,6 +14,34 @@ from ..models import AIConfig, AIProvider, Config
 from .tokens import record_usage
 
 
+class AIError(Exception):
+    """Exception raised when an AI API call fails."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        provider: str,
+        model: str,
+        name: Optional[str] = None,
+        status_code: Optional[int] = None,
+        error_code: Optional[str] = None,
+    ):
+        self.provider = provider
+        self.model = model
+        self.name = name
+        self.status_code = status_code
+        self.error_code = error_code
+        display_name = name or model
+        detail = f"[{provider}] {display_name}"
+        if status_code:
+            detail += f" (HTTP {status_code})"
+        if error_code:
+            detail += f" - {error_code}"
+        detail += f": {message}"
+        super().__init__(detail)
+
+
 class AIClient(ABC):
     """Abstract base class for AI clients."""
 
@@ -73,8 +101,16 @@ class AIClients(AIClient):
                 await self._mark_client_success(client_index)
                 return response
             except Exception as exc:
-                if not _is_rate_limit_error(exc):
-                    raise
+                # Print detailed error info for debugging
+                error_detail = str(exc)
+                if isinstance(exc, AIError):
+                    error_detail = exc.args[0] if exc.args else str(exc)
+                client_name = getattr(client, 'config', None)
+                model_name = getattr(client, 'model', 'unknown') if client_name else 'unknown'
+                provider_name = getattr(client_name, 'provider', 'unknown') if client_name else 'unknown'
+                alias_name = getattr(client_name, 'name', None) if client_name else None
+                display_name = alias_name or model_name
+                print(f"[{provider_name}] {display_name}: {error_detail}")
                 last_rate_limit_error = exc
 
         if last_rate_limit_error is not None:
@@ -137,13 +173,25 @@ class AnthropicClient(AIClient):
         temperature = self.temperature if temperature is None else temperature
         max_tokens = self.max_tokens if max_tokens is None else max_tokens
 
-        message = await self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=system,
-            messages=[{"role": "user", "content": user}]
-        )
+        try:
+            message = await self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system,
+                messages=[{"role": "user", "content": user}]
+            )
+        except Exception as exc:
+            print("error here")
+            raise AIError(
+                _extract_error_message(exc),
+                provider="anthropic",
+                model=self.model,
+                name=self.config.name,
+                status_code=_extract_status_code(exc),
+                error_code=_extract_error_code(exc),
+            ) from exc
+
         usage = getattr(message, "usage", None)
         if usage is not None:
             record_usage(
@@ -199,16 +247,27 @@ class OpenAIClient(AIClient):
         temperature = self.temperature if temperature is None else temperature
         max_tokens = self.max_tokens if max_tokens is None else max_tokens
 
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user}
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-            response_format={"type": "json_object"}
-        )
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user}
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens,
+                response_format={"type": "json_object"}
+            )
+        except Exception as exc:
+            raise AIError(
+                _extract_error_message(exc),
+                provider="openai",
+                model=self.model,
+                name=self.config.name,
+                status_code=_extract_status_code(exc),
+                error_code=_extract_error_code(exc),
+            ) from exc
+
         usage = getattr(response, "usage", None)
         if usage is not None:
             record_usage(
@@ -296,16 +355,33 @@ class AzureOpenAIClient(AIClient):
         except Exception as exc:
             fallback = self._token_fallback_mode(str(exc))
             if fallback is None:
-                raise
+                raise AIError(
+                    _extract_error_message(exc),
+                    provider="azure",
+                    model=self.model,
+                    name=self.config.name,
+                    status_code=_extract_status_code(exc),
+                    error_code=_extract_error_code(exc),
+                ) from exc
 
             self._use_max_completion_tokens = fallback
-            response = await self._create_completion(
-                system=system,
-                user=user,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                use_max_completion_tokens=fallback,
-            )
+            try:
+                response = await self._create_completion(
+                    system=system,
+                    user=user,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    use_max_completion_tokens=fallback,
+                )
+            except Exception as exc2:
+                raise AIError(
+                    _extract_error_message(exc2),
+                    provider="azure",
+                    model=self.model,
+                    name=self.config.name,
+                    status_code=_extract_status_code(exc2),
+                    error_code=_extract_error_code(exc2),
+                ) from exc2
 
         usage = getattr(response, "usage", None)
         if usage is not None:
@@ -404,15 +480,26 @@ class MiniMaxClient(AIClient):
         if temperature <= 0:
             temperature = 0.01
 
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user}
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user}
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        except Exception as exc:
+            raise AIError(
+                _extract_error_message(exc),
+                provider="minimax",
+                model=self.model,
+                name=self.config.name,
+                status_code=_extract_status_code(exc),
+                error_code=_extract_error_code(exc),
+            ) from exc
+
         usage = getattr(response, "usage", None)
         if usage is not None:
             record_usage(
@@ -468,16 +555,27 @@ class AliClient(AIClient):
         temperature = self.temperature if temperature is None else temperature
         max_tokens = self.max_tokens if max_tokens is None else max_tokens
 
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user}
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-            response_format={"type": "json_object"}
-        )
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user}
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens,
+                response_format={"type": "json_object"}
+            )
+        except Exception as exc:
+            raise AIError(
+                _extract_error_message(exc),
+                provider="ali",
+                model=self.model,
+                name=self.config.name,
+                status_code=_extract_status_code(exc),
+                error_code=_extract_error_code(exc),
+            ) from exc
+
         return response.choices[0].message.content
 
 
@@ -522,16 +620,27 @@ class GeminiClient(AIClient):
         temperature = self.temperature if temperature is None else temperature
         max_tokens = self.max_tokens if max_tokens is None else max_tokens
 
-        response = await self.client.aio.models.generate_content(
-            model=self.model,
-            contents=user,
-            config=types.GenerateContentConfig(
-                system_instruction=system,
-                temperature=temperature,
-                max_output_tokens=max_tokens,
-                response_mime_type="application/json"
+        try:
+            response = await self.client.aio.models.generate_content(
+                model=self.model,
+                contents=user,
+                config=types.GenerateContentConfig(
+                    system_instruction=system,
+                    temperature=temperature,
+                    max_output_tokens=max_tokens,
+                    response_mime_type="application/json"
+                )
             )
-        )
+        except Exception as exc:
+            raise AIError(
+                _extract_error_message(exc),
+                provider="gemini",
+                model=self.model,
+                name=self.config.name,
+                status_code=_extract_status_code(exc),
+                error_code=_extract_error_code(exc),
+            ) from exc
+
         usage = getattr(response, "usage_metadata", None)
         if usage is not None:
             total = getattr(usage, "total_token_count", 0) or 0
@@ -541,7 +650,89 @@ class GeminiClient(AIClient):
         return response.text
 
 
-def _is_rate_limit_error(exc: Exception) -> bool:
+def _extract_error_message(exc: Exception) -> str:
+    """Extract a human-readable error message from an exception."""
+    # Try to get a clean message from the exception
+    message = str(exc)
+
+    # For OpenAI SDK exceptions
+    if hasattr(exc, "message"):
+        message = exc.message
+
+    # For Anthropic exceptions
+    if hasattr(exc, "body"):
+        body = getattr(exc, "body", None)
+        if body and hasattr(body, "get"):
+            error_info = body.get("error", {})
+            if isinstance(error_info, dict):
+                error_msg = error_info.get("message", "")
+                if error_msg:
+                    message = error_msg
+
+    # Strip generic prefixes
+    for prefix in ["Error:", "Exception:", "APIError:", "BadRequestError:", "NotFoundError:", "ServerError:", "TypeError:"]:
+        if message.startswith(prefix):
+            message = message[len(prefix):].strip()
+
+    return message or "Unknown error"
+
+
+def _extract_status_code(exc: Exception) -> Optional[int]:
+    """Extract HTTP status code from an exception."""
+    # Direct status_code attribute
+    status_code = getattr(exc, "status_code", None)
+    if status_code is not None:
+        return status_code
+
+    # Check response object
+    response = getattr(exc, "response", None)
+    if response is not None:
+        status_code = getattr(response, "status_code", None)
+        if status_code is not None:
+            return status_code
+
+    # For OpenAI SDK exceptions
+    if hasattr(exc, "status_code"):
+        return exc.status_code
+
+    # Try to parse from message
+    message = str(exc)
+    import re
+    match = re.search(r"\b(\d{3})\b", message)
+    if match:
+        code = int(match.group(1))
+        if 100 <= code < 600:
+            return code
+
+    return None
+
+
+def _extract_error_code(exc: Exception) -> Optional[str]:
+    """Extract error code string from an exception."""
+    # For OpenAI SDK exceptions
+    code = getattr(exc, "code", None)
+    if code:
+        return str(code)
+
+    # For Anthropic exceptions
+    if hasattr(exc, "body"):
+        body = getattr(exc, "body", None)
+        if body and hasattr(body, "get"):
+            error_info = body.get("error", {})
+            if isinstance(error_info, dict):
+                return error_info.get("type") or error_info.get("code")
+
+    # Try to extract from message
+    message = str(exc)
+    import re
+    match = re.search(r"\[([A-Z_]+)\]", message)
+    if match:
+        return match.group(1)
+
+    return None
+
+
+def     _is_rate_limit_error(exc: Exception) -> bool:
     """Return True when an SDK exception represents HTTP 429/rate limiting."""
     status_code = getattr(exc, "status_code", None)
     if status_code == 429:

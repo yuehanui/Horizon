@@ -7,7 +7,7 @@ from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, MofNCompleteColumn
 
-from .client import AIClient, AIClients
+from .client import AIClient, AIClients, AIError
 from .prompts import CONTENT_ANALYSIS_SYSTEM, CONTENT_ANALYSIS_USER
 from .utils import parse_json_response
 from ..models import ContentItem
@@ -18,8 +18,8 @@ DEFAULT_THROTTLE_SEC = 0.0
 class ContentAnalyzer:
     """Analyzes content items using AI to determine importance."""
 
-    def __init__(self, ai_client: AIClients | AIClient):
-        self.client = ai_client
+    def __init__(self, ai_clients: AIClients | AIClient):
+        self.clients = ai_clients
 
     @staticmethod
     def _parse_json_response(response: str) -> Optional[dict]:
@@ -31,7 +31,7 @@ class ContentAnalyzer:
 
     def _get_throttle_sec(self) -> float:
         """Return the configured inter-item throttle, clamped to zero or above."""
-        config = getattr(self.client, "config", None)
+        config = getattr(self.clients, "config", None)
         throttle_sec = getattr(config, "throttle_sec", DEFAULT_THROTTLE_SEC)
         return max(throttle_sec, 0.0)
 
@@ -51,6 +51,12 @@ class ContentAnalyzer:
             for index, item in enumerate(items):
                 try:
                     await self._analyze_item(item)
+                    analyzed_items.append(item)
+                except AIError as e:
+                    print(f"AI Error analyzing {item.id}: {e}")
+                    item.ai_score = 0.0
+                    item.ai_reason = f"AI Error: {e.error_code or 'Unknown'}"
+                    item.ai_summary = item.title
                     analyzed_items.append(item)
                 except Exception as e:
                     print(f"Error analyzing item {item.id}: {e}")
@@ -129,7 +135,7 @@ class ContentAnalyzer:
         )
 
         # Get AI completion
-        response = await self.client.complete(
+        response = await self.clients.complete(
             system=CONTENT_ANALYSIS_SYSTEM,
             user=user_prompt,
         )

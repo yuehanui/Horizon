@@ -50,6 +50,7 @@ class AIProvider(str, Enum):
 class AIConfig(BaseModel):
     """AI client configuration."""
 
+    name: Optional[str] = None
     provider: AIProvider
     model: str
     base_url: Optional[str] = None

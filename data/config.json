@@ -1,12 +1,13 @@
 {
   "version": "1.0",
   "ai": {
+    "name": "",
     "provider": "minimax",
     "model": "minimax/minimax-m2.5:free",
     "base_url": "https://openrouter.ai/api/v1",
     "api_key_env": "OPENROUTER_API_KEY",
     "temperature": 0.3,
-    "max_tokens": 8192,
+    "max_tokens": 180000,
     "throttle_sec": 0.0,
     "languages": [
       "en", "zh"
@@ -14,227 +15,246 @@
   },
   "ai_providers": [
     {
+      "name": "",
       "provider": "minimax",
       "model": "minimax/minimax-m2.5:free",
       "base_url": "https://openrouter.ai/api/v1",
       "api_key_env": "OPENROUTER_API_KEY_1",
       "temperature": 0.3,
-      "max_tokens": 196608,
+      "max_tokens": 180000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "minimax/minimax-m2.5:free",
       "base_url": "https://openrouter.ai/api/v1",
       "api_key_env": "OPENROUTER_API_KEY_2",
       "temperature": 0.3,
-      "max_tokens": 196608,
+      "max_tokens": 180000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "z-ai/glm-4.5-air:free",
       "base_url": "https://openrouter.ai/api/v1",
       "api_key_env": "OPENROUTER_API_KEY_3",
       "temperature": 0.3,
-      "max_tokens": 128000,
+      "max_tokens": 108000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "deepseek-ai/deepseek-v4-pro",
       "base_url": "https://integrate.api.nvidia.com/v1",
       "api_key_env": "NVIDIA_API_KEY_1",
       "temperature": 0.3,
-      "max_tokens": 1000000,
+      "max_tokens": 500000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "deepseek-ai/deepseek-v4-flash",
       "base_url": "https://integrate.api.nvidia.com/v1",
       "api_key_env": "NVIDIA_API_KEY_2",
       "temperature": 0.3,
-      "max_tokens": 1000000,
+      "max_tokens": 500000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "z-ai/glm-4.7",
       "base_url": "https://integrate.api.nvidia.com/v1",
       "api_key_env": "NVIDIA_API_KEY_3",
       "temperature": 0.3,
-      "max_tokens": 200000,
+      "max_tokens": 100000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "moonshotai/kimi-k2-thinking",
       "base_url": "https://integrate.api.nvidia.com/v1",
       "api_key_env": "NVIDIA_API_KEY_4",
       "temperature": 0.3,
-      "max_tokens": 256000,
+      "max_tokens": 206000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "minimaxai/minimax-m2.7",
       "base_url": "https://integrate.api.nvidia.com/v1",
       "api_key_env": "NVIDIA_API_KEY_5",
       "temperature": 0.3,
-      "max_tokens": 200000,
+      "max_tokens": 100000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "mistral-large-latest",
       "base_url": "https://api.mistral.ai/v1",
       "api_key_env": "MISTRAL_API_KEY_1",
       "temperature": 0.3,
-      "max_tokens": 256000,
+      "max_tokens": 206000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "mistral-large-latest",
       "base_url": "https://api.mistral.ai/v1",
       "api_key_env": "MISTRAL_API_KEY_2",
       "temperature": 0.3,
-      "max_tokens": 256000,
+      "max_tokens": 206000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "mistral-large-latest",
       "base_url": "https://api.mistral.ai/v1",
       "api_key_env": "MISTRAL_API_KEY_3",
       "temperature": 0.3,
-      "max_tokens": 256000,
+      "max_tokens": 206000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "mistral-large-latest",
       "base_url": "https://api.mistral.ai/v1",
       "api_key_env": "MISTRAL_API_KEY_4",
       "temperature": 0.3,
-      "max_tokens": 256000,
+      "max_tokens": 206000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "mistral-large-latest",
       "base_url": "https://api.mistral.ai/v1",
       "api_key_env": "MISTRAL_API_KEY_5",
       "temperature": 0.3,
-      "max_tokens": 256000,
+      "max_tokens": 206000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "mistral-large-latest",
       "base_url": "https://api.mistral.ai/v1",
       "api_key_env": "MISTRAL_API_KEY_6",
       "temperature": 0.3,
-      "max_tokens": 256000,
+      "max_tokens": 206000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "z-ai/glm-5.1",
       "base_url": "https://api-inference.modelscope.cn/v1",
       "api_key_env": "MODELSCOPE_API_KEY_1",
       "temperature": 0.3,
-      "max_tokens": 200000,
+      "max_tokens": 150000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "deepseek-ai/DeepSeek-V4-Pro",
       "base_url": "https://api-inference.modelscope.cn/v1",
       "api_key_env": "MODELSCOPE_API_KEY_2",
       "temperature": 0.3,
-      "max_tokens": 1000000,
+      "max_tokens": 500000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "moonshotai/Kimi-K2.5",
       "base_url": "https://api-inference.modelscope.cn/v1",
       "api_key_env": "MODELSCOPE_API_KEY_3",
       "temperature": 0.3,
-      "max_tokens": 200000,
+      "max_tokens": 100000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "minimax",
       "model": "MiniMax/MiniMax-M2.7",
       "base_url": "https://api-inference.modelscope.cn/v1",
       "api_key_env": "MODELSCOPE_API_KEY_4",
       "temperature": 0.3,
-      "max_tokens": 200000,
+      "max_tokens": 100000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
       ]
     },
     {
+      "name": "",
       "provider": "gemini",
       "model": "gemini-2.5-flash",
       "api_key_env": "GEMINI_API_KEY_1",
       "temperature": 0.3,
-      "max_tokens": 1000000,
+      "max_tokens": 500000,
       "throttle_sec": 0.0,
       "languages": [
         "en", "zh"
