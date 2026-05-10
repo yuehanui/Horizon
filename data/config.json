@@ -238,7 +238,7 @@
     {
       "name": "modelscope",
       "provider": "minimax",
-      "model": "MiniMax/MiniMax-M2.7:MiniMax",
+      "model": "MiniMax/MiniMax-M2.5",
       "base_url": "https://api-inference.modelscope.cn/v1",
       "api_key_env": "MODELSCOPE_API_KEY_4",
       "temperature": 0.3,
