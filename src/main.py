@@ -74,7 +74,7 @@ def main():
 
         # Create and run orchestrator
         orchestrator = HorizonOrchestrator(config, storage)
-        asyncio.run(orchestrator.run(force_hours=168, till_days_ago=7))
+        asyncio.run(orchestrator.run(force_hours=args.hours, till_days_ago=args.till-days-ago))
         # asyncio.run(orchestrator.run(force_hours=args.hours, till_days_ago=args.till_days_ago))
 
     except KeyboardInterrupt:
