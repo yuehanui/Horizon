@@ -203,7 +203,7 @@
       "base_url": "https://api-inference.modelscope.cn/v1",
       "api_key_env": "MODELSCOPE_API_KEY_1",
       "temperature": 0.3,
-      "max_tokens": 150000,
+      "max_tokens": 100000,
       "throttle_sec": 0.0,
       "languages": [
         "zh"
@@ -216,7 +216,7 @@
       "base_url": "https://api-inference.modelscope.cn/v1",
       "api_key_env": "MODELSCOPE_API_KEY_2",
       "temperature": 0.3,
-      "max_tokens": 500000,
+      "max_tokens": 100000,
       "throttle_sec": 0.0,
       "languages": [
         "zh"
