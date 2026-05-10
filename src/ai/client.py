@@ -109,7 +109,7 @@ class AIClients(AIClient):
                 model_name = getattr(client, 'model', 'unknown') if client_name else 'unknown'
                 provider_name = getattr(client_name, 'provider', 'unknown') if client_name else 'unknown'
                 alias_name = getattr(client_name, 'name', None) if client_name else None
-\                provider_name = alias_name or provider_name
+                provider_name = alias_name or provider_name
                 print(f"[{provider_name}] {model_name}: {error_detail}")
                 last_rate_limit_error = exc
 
