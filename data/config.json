@@ -281,12 +281,6 @@
         "category": ""
       },
       {
-        "name": "Almanack of Naval",
-        "url": "https://www.navalmanack.com/blog-posts?format=rss",
-        "enabled": true,
-        "category": ""
-      },
-      {
         "name": "Antirez",
         "url": "https://antirez.com/rss",
         "enabled": true,
@@ -299,14 +293,14 @@
         "category": ""
       },
       {
-        "name": "Dynomight",
-        "url": "https://dynomight.net/feed.xml",
+        "name": "Dan Luu",
+        "url": "https://danluu.com/atom.xml",
         "enabled": true,
         "category": ""
       },
       {
-        "name": "Ed Zitron's Where's Your Ed At",
-        "url": "https://www.wheresyoured.at/rss/",
+        "name": "Dynomight",
+        "url": "https://dynomight.net/feed.xml",
         "enabled": true,
         "category": ""
       },
@@ -335,6 +329,12 @@
         "category": ""
       },
       {
+        "name": "Hillel Wayne",
+        "url": "https://www.hillelwayne.com/index.xml",
+        "enabled": true,
+        "category": ""
+      },
+      {
         "name": "Karpathy",
         "url": "https://karpathy.bearblog.dev/feed/",
         "enabled": true,
@@ -349,6 +349,12 @@
       {
         "name": "Lil'Log",
         "url": "https://lilianweng.github.io/index.xml",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Marginal Revolution",
+        "url": "https://feeds.feedblitz.com/marginalrevolution",
         "enabled": true,
         "category": ""
       },
@@ -377,14 +383,38 @@
         "category": ""
       },
       {
+        "name": "seangoedecke.com",
+        "url": "https://www.seangoedecke.com/rss.xml",
+        "enabled": true,
+        "category": ""
+      },
+      {
         "name": "Simon Willison's Weblog",
-        "url": "https://simonwillison.net/atom/everything/",
+        "url": "https://simonwillison.net/atom/entries/",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "Stratechery",
+        "url": "https://stratechery.passport.online/feed/rss/CapYWLPgaP17GQWN4PpGi",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "The Diff by Byrne Hobart",
+        "url": "https://www.thediff.co/archive/rss/",
         "enabled": true,
         "category": ""
       },
       {
         "name": "The Pragmatic Engineer",
         "url": "https://newsletter.pragmaticengineer.com/feed",
+        "enabled": true,
+        "category": ""
+      },
+      {
+        "name": "The Works in Progress Newsletter",
+        "url": "https://www.worksinprogress.news/feed",
         "enabled": true,
         "category": ""
       }
