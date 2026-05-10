@@ -45,11 +45,12 @@ class HorizonOrchestrator:
             else None
         )
 
-    async def run(self, force_hours: int = None) -> None:
+    async def run(self, force_hours: int = None, till_days_ago: int = None) -> None:
         """Execute the complete workflow.
 
         Args:
             force_hours: Optional override for time window in hours
+            till_days_ago: Optional end point of time window in days before now (default: now)
         """
         self.console.print("[bold cyan]🌅 Horizon - Starting aggregation...[/bold cyan]\n")
 
@@ -60,11 +61,11 @@ class HorizonOrchestrator:
 
         try:
             # 1. Determine time window
-            since = self._determine_time_window(force_hours)
-            self.console.print(f"📅 Fetching content since: {since.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            since, until = self._determine_time_window(force_hours, till_days_ago)
+            self.console.print(f"📅 Fetching content from {since.strftime('%Y-%m-%d %H:%M:%S')} to {until.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
             # 2. Fetch content from all sources
-            all_items = await self.fetch_all_sources(since)
+            all_items = await self.fetch_all_sources(since, until)
             self.console.print(f"📥 Fetched {len(all_items)} items from all sources\n")
 
             if not all_items:
@@ -210,21 +211,41 @@ class HorizonOrchestrator:
 
             raise
 
-    def _determine_time_window(self, force_hours: int = None) -> datetime:
+    def _determine_time_window(self, force_hours: int = None, till_days_ago: int = None) -> tuple[datetime, datetime]:
+        """Determine the time window for fetching content.
+
+        Args:
+            force_hours: Optional override for time window duration in hours
+            till_days_ago: Optional end point in days before now (default: now)
+
+        Returns:
+            tuple: (since, until) datetime objects
+        """
+        now = datetime.now(timezone.utc)
+
+        # Calculate 'until' (end of time window)
+        if till_days_ago is not None:
+            until = now - timedelta(days=till_days_ago)
+        else:
+            until = now
+
+        # Calculate 'since' (start of time window)
         if force_hours:
-            since = datetime.now(timezone.utc) - timedelta(hours=force_hours)
+            since = until - timedelta(hours=force_hours)
         else:
             hours = self.config.filtering.time_window_hours
-            since = datetime.now(timezone.utc) - timedelta(hours=hours)
-        return since
+            since = now - timedelta(hours=hours)
 
-    async def fetch_all_sources(self, since: datetime) -> List[ContentItem]:
+        return since, until
+
+    async def fetch_all_sources(self, since: datetime, until: datetime) -> List[ContentItem]:
         """Fetch content from all configured sources.
 
         This is a stable stage entry point for integrations such as MCP.
 
         Args:
             since: Fetch items published after this time
+            until: Fetch items published before this time
 
         Returns:
             List[ContentItem]: All fetched items
@@ -235,32 +256,32 @@ class HorizonOrchestrator:
             # GitHub sources
             if self.config.sources.github:
                 github_scraper = GitHubScraper(self.config.sources.github, client)
-                tasks.append(self._fetch_with_progress("GitHub", github_scraper, since))
+                tasks.append(self._fetch_with_progress("GitHub", github_scraper, since, until))
 
             # Hacker News
             if self.config.sources.hackernews.enabled:
                 hn_scraper = HackerNewsScraper(self.config.sources.hackernews, client)
-                tasks.append(self._fetch_with_progress("Hacker News", hn_scraper, since))
+                tasks.append(self._fetch_with_progress("Hacker News", hn_scraper, since, until))
 
             # RSS feeds
             if self.config.sources.rss:
                 rss_scraper = RSSScraper(self.config.sources.rss, client)
-                tasks.append(self._fetch_with_progress("RSS Feeds", rss_scraper, since))
+                tasks.append(self._fetch_with_progress("RSS Feeds", rss_scraper, since, until))
 
             # Reddit
             if self.config.sources.reddit.enabled:
                 reddit_scraper = RedditScraper(self.config.sources.reddit, client)
-                tasks.append(self._fetch_with_progress("Reddit", reddit_scraper, since))
+                tasks.append(self._fetch_with_progress("Reddit", reddit_scraper, since, until))
 
             # Telegram
             if self.config.sources.telegram.enabled:
                 telegram_scraper = TelegramScraper(self.config.sources.telegram, client)
-                tasks.append(self._fetch_with_progress("Telegram", telegram_scraper, since))
+                tasks.append(self._fetch_with_progress("Telegram", telegram_scraper, since, until))
 
             # Twitter
             if self.config.sources.twitter and self.config.sources.twitter.enabled:
                 twitter_scraper = TwitterScraper(self.config.sources.twitter, client)
-                tasks.append(self._fetch_with_progress("Twitter", twitter_scraper, since))
+                tasks.append(self._fetch_with_progress("Twitter", twitter_scraper, since, until))
 
             # Fetch all concurrently
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -275,19 +296,20 @@ class HorizonOrchestrator:
 
             return all_items
 
-    async def _fetch_with_progress(self, name: str, scraper, since: datetime) -> List[ContentItem]:
+    async def _fetch_with_progress(self, name: str, scraper, since: datetime, until: datetime) -> List[ContentItem]:
         """Fetch from a scraper with progress indication.
 
         Args:
             name: Source name for display
             scraper: Scraper instance
             since: Fetch items after this time
+            until: Fetch items before this time
 
         Returns:
             List[ContentItem]: Fetched items
         """
         self.console.print(f"🔍 Fetching from {name}...")
-        items = await scraper.fetch(since)
+        items = await scraper.fetch(since, until)
         self.console.print(f"   Found {len(items)} items from {name}")
 
         # Show per-sub-source breakdown when there are multiple sub-sources

@@ -23,7 +23,7 @@ class HackerNewsScraper(BaseScraper):
         super().__init__(config.model_dump(), http_client)
         self.base_url = "https://hacker-news.firebaseio.com/v0"
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(self, since: datetime, until: datetime) -> List[ContentItem]:
         if not self.config.get("enabled", True):
             return []
 
@@ -52,7 +52,7 @@ class HackerNewsScraper(BaseScraper):
                 if story.get("score", 0) < min_score:
                     continue
                 published_at = datetime.fromtimestamp(story["time"], tz=timezone.utc)
-                if published_at < since:
+                if published_at < since or published_at >= until:
                     continue
                 valid_stories.append(story)
                 # Queue comment fetching

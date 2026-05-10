@@ -27,7 +27,7 @@ class TwitterScraper(BaseScraper):
         super().__init__(config, http_client)
         self.config = config
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(self, since: datetime, until: datetime) -> List[ContentItem]:
         if not self.config.enabled:
             return []
 
@@ -58,7 +58,7 @@ class TwitterScraper(BaseScraper):
         for raw in raw_items:
             if isinstance(raw, dict) and raw.get("noResults"):
                 continue
-            parsed = self._parse_item(raw, since)
+            parsed = self._parse_item(raw, since, until)
             if parsed:
                 items.append(parsed)
 
@@ -224,7 +224,7 @@ class TwitterScraper(BaseScraper):
             item.content = f"{marker}\n" + block
         return True
 
-    def _parse_item(self, item: dict, since: datetime) -> Optional[ContentItem]:
+    def _parse_item(self, item: dict, since: datetime, until: datetime) -> Optional[ContentItem]:
         try:
             created_at_str = item.get("created_at")
             if not created_at_str:
@@ -240,7 +240,7 @@ class TwitterScraper(BaseScraper):
             if published_at.tzinfo is None:
                 published_at = published_at.replace(tzinfo=timezone.utc)
 
-            if published_at < since:
+            if published_at < since or published_at >= until:
                 return None
 
             tweet_id = str(item.get("id_str") or item.get("id") or "")

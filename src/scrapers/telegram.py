@@ -25,14 +25,14 @@ class TelegramScraper(BaseScraper):
         super().__init__(config.model_dump(), http_client)
         self.telegram_config = config
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(self, since: datetime, until: datetime) -> List[ContentItem]:
         if not self.config.get("enabled", True):
             return []
 
         tasks = []
         for channel_cfg in self.telegram_config.channels:
             if channel_cfg.enabled:
-                tasks.append(self._fetch_channel(channel_cfg, since))
+                tasks.append(self._fetch_channel(channel_cfg, since, until))
 
         if not tasks:
             return []
@@ -46,7 +46,7 @@ class TelegramScraper(BaseScraper):
                 items.extend(result)
         return items
 
-    async def _fetch_channel(self, cfg: TelegramChannelConfig, since: datetime) -> List[ContentItem]:
+    async def _fetch_channel(self, cfg: TelegramChannelConfig, since: datetime, until: datetime) -> List[ContentItem]:
         url = f"{TELEGRAM_WEB_BASE}/{cfg.channel}"
         headers = {"User-Agent": USER_AGENT}
         try:
@@ -61,23 +61,23 @@ class TelegramScraper(BaseScraper):
             logger.warning("Telegram request failed for %s: [%s] %r", cfg.channel, type(e).__name__, e)
             return []
 
-        return self._parse_channel_html(response.text, cfg, since)
+        return self._parse_channel_html(response.text, cfg, since, until)
 
     def _parse_channel_html(
-        self, html: str, cfg: TelegramChannelConfig, since: datetime
+        self, html: str, cfg: TelegramChannelConfig, since: datetime, until: datetime
     ) -> List[ContentItem]:
         soup = BeautifulSoup(html, "html.parser")
         messages = soup.select("div.tgme_widget_message[data-post]")
 
         items = []
         for msg in messages[-cfg.fetch_limit:]:
-            item = self._parse_message(msg, cfg.channel, since)
+            item = self._parse_message(msg, cfg.channel, since, until)
             if item:
                 items.append(item)
         return items
 
     def _parse_message(
-        self, msg_el, channel: str, since: datetime
+        self, msg_el, channel: str, since: datetime, until: datetime
     ) -> Optional[ContentItem]:
         # Extract message ID
         data_post = msg_el.get("data-post", "")
@@ -94,7 +94,7 @@ class TelegramScraper(BaseScraper):
         except (ValueError, KeyError):
             return None
 
-        if published_at < since:
+        if published_at < since or published_at >= until:
             return None
 
         # Extract message text

@@ -28,11 +28,12 @@ class RSSScraper(BaseScraper):
         """
         super().__init__({"sources": sources}, http_client)
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(self, since: datetime, until: datetime) -> List[ContentItem]:
         """Fetch RSS feed items.
 
         Args:
             since: Only fetch items published after this time
+            until: Only fetch items published before this time
 
         Returns:
             List[ContentItem]: Fetched content items
@@ -44,7 +45,7 @@ class RSSScraper(BaseScraper):
             if not source.enabled:
                 continue
 
-            feed_items = await self._fetch_feed(source, since)
+            feed_items = await self._fetch_feed(source, since, until)
             items.extend(feed_items)
 
         return items
@@ -52,13 +53,15 @@ class RSSScraper(BaseScraper):
     async def _fetch_feed(
         self,
         source: RSSSourceConfig,
-        since: datetime
+        since: datetime,
+        until: datetime,
     ) -> List[ContentItem]:
         """Fetch items from a single RSS feed.
 
         Args:
             source: RSS feed configuration
             since: Only fetch items after this time
+            until: Only fetch items before this time
 
         Returns:
             List[ContentItem]: Feed content items
@@ -83,7 +86,7 @@ class RSSScraper(BaseScraper):
             for entry in feed.entries:
                 # Parse published date
                 published_at = self._parse_date(entry)
-                if not published_at or published_at < since:
+                if not published_at or published_at < since or published_at >= until:
                     continue
 
                 # Generate unique ID from feed URL and entry ID

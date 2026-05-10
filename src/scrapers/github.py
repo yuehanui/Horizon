@@ -40,11 +40,12 @@ class GitHubScraper(BaseScraper):
             headers["Authorization"] = f"token {self.token}"
         return headers
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(self, since: datetime, until: datetime) -> List[ContentItem]:
         """Fetch GitHub content items.
 
         Args:
             since: Only fetch items published after this time
+            until: Only fetch items published before this time
 
         Returns:
             List[ContentItem]: Fetched content items
@@ -57,11 +58,11 @@ class GitHubScraper(BaseScraper):
                 continue
 
             if source.type == "user_events" and source.username:
-                user_items = await self._fetch_user_events(source.username, since)
+                user_items = await self._fetch_user_events(source.username, since, until)
                 items.extend(user_items)
             elif source.type == "repo_releases" and source.owner and source.repo:
                 release_items = await self._fetch_repo_releases(
-                    source.owner, source.repo, since
+                    source.owner, source.repo, since, until
                 )
                 items.extend(release_items)
 
@@ -70,13 +71,15 @@ class GitHubScraper(BaseScraper):
     async def _fetch_user_events(
         self,
         username: str,
-        since: datetime
+        since: datetime,
+        until: datetime,
     ) -> List[ContentItem]:
         """Fetch public events for a user.
 
         Args:
             username: GitHub username
             since: Only fetch events after this time
+            until: Only fetch events before this time
 
         Returns:
             List[ContentItem]: Event content items
@@ -94,7 +97,7 @@ class GitHubScraper(BaseScraper):
                     event["created_at"].replace("Z", "+00:00")
                 )
 
-                if created_at < since:
+                if created_at < since or created_at >= until:
                     continue
 
                 # Filter interesting event types
@@ -172,7 +175,8 @@ class GitHubScraper(BaseScraper):
         self,
         owner: str,
         repo: str,
-        since: datetime
+        since: datetime,
+        until: datetime,
     ) -> List[ContentItem]:
         """Fetch releases for a repository.
 
@@ -180,6 +184,7 @@ class GitHubScraper(BaseScraper):
             owner: Repository owner
             repo: Repository name
             since: Only fetch releases after this time
+            until: Only fetch releases before this time
 
         Returns:
             List[ContentItem]: Release content items
@@ -197,7 +202,7 @@ class GitHubScraper(BaseScraper):
                     release["published_at"].replace("Z", "+00:00")
                 )
 
-                if published_at < since:
+                if published_at < since or published_at >= until:
                     continue
 
                 item = ContentItem(

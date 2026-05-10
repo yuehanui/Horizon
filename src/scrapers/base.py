@@ -22,11 +22,12 @@ class BaseScraper(ABC):
         self.client = http_client
 
     @abstractmethod
-    async def fetch(self, since: datetime) -> List[ContentItem]:
-        """Fetch content items published since the given time.
+    async def fetch(self, since: datetime, until: datetime) -> List[ContentItem]:
+        """Fetch content items published within the given time range.
 
         Args:
             since: Only fetch items published after this time
+            until: Only fetch items published before this time
 
         Returns:
             List[ContentItem]: Fetched content items

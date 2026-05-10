@@ -36,17 +36,17 @@ class RedditScraper(BaseScraper):
         self.reddit_config = config
         self._comment_semaphore = asyncio.Semaphore(MAX_COMMENT_CONCURRENCY)
 
-    async def fetch(self, since: datetime) -> List[ContentItem]:
+    async def fetch(self, since: datetime, until: datetime) -> List[ContentItem]:
         if not self.config.get("enabled", True):
             return []
 
         tasks = []
         for sub_cfg in self.reddit_config.subreddits:
             if sub_cfg.enabled:
-                tasks.append(self._fetch_subreddit(sub_cfg, since))
+                tasks.append(self._fetch_subreddit(sub_cfg, since, until))
         for user_cfg in self.reddit_config.users:
             if user_cfg.enabled:
-                tasks.append(self._fetch_user(user_cfg, since))
+                tasks.append(self._fetch_user(user_cfg, since, until))
 
         if not tasks:
             return []
@@ -60,7 +60,7 @@ class RedditScraper(BaseScraper):
                 items.extend(result)
         return items
 
-    async def _fetch_subreddit(self, cfg: RedditSubredditConfig, since: datetime) -> List[ContentItem]:
+    async def _fetch_subreddit(self, cfg: RedditSubredditConfig, since: datetime, until: datetime) -> List[ContentItem]:
         params = {"limit": min(cfg.fetch_limit, 100), "raw_json": 1}
         if cfg.sort in ("top", "controversial"):
             params["t"] = cfg.time_filter
@@ -73,10 +73,10 @@ class RedditScraper(BaseScraper):
         posts = [child["data"] for child in data.get("data", {}).get("children", [])
                  if child.get("kind") == "t3"]
         return await self._process_posts(
-            posts, since, "subreddit", cfg.subreddit, cfg.min_score
+            posts, since, until, "subreddit", cfg.subreddit, cfg.min_score
         )
 
-    async def _fetch_user(self, cfg: RedditUserConfig, since: datetime) -> List[ContentItem]:
+    async def _fetch_user(self, cfg: RedditUserConfig, since: datetime, until: datetime) -> List[ContentItem]:
         params = {"limit": min(cfg.fetch_limit, 100), "sort": cfg.sort, "raw_json": 1}
         url = f"{REDDIT_BASE}/user/{cfg.username}/submitted.json"
         data = await self._reddit_get(url, params)
@@ -86,13 +86,14 @@ class RedditScraper(BaseScraper):
         posts = [child["data"] for child in data.get("data", {}).get("children", [])
                  if child.get("kind") == "t3"]
         return await self._process_posts(
-            posts, since, "user", cfg.username, min_score=0
+            posts, since, until, "user", cfg.username, min_score=0
         )
 
     async def _process_posts(
         self,
         posts: list,
         since: datetime,
+        until: datetime,
         subtype: str,
         source_name: str,
         min_score: int,
@@ -103,7 +104,7 @@ class RedditScraper(BaseScraper):
 
         for post in posts:
             created = datetime.fromtimestamp(post.get("created_utc", 0), tz=timezone.utc)
-            if created < since:
+            if created < since or created >= until:
                 continue
             if post.get("score", 0) < min_score:
                 continue
