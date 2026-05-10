@@ -82,7 +82,7 @@
     {
       "name": "nvidia",
       "provider": "minimax",
-      "model": "z-ai/glm-4.7",
+      "model": "deepseek-ai/deepseek-v4-pro",
       "base_url": "https://integrate.api.nvidia.com/v1",
       "api_key_env": "NVIDIA_API_KEY_3",
       "temperature": 0.3,
